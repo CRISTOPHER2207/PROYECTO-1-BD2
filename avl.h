@@ -1,229 +1,356 @@
-#ifndef AVLARCHIVOS_FINAL_H
-#define AVLARCHIVOS_FINAL_H
 
-#include <iostream>
-#include <fstream>
-#include <cstring> // Para uso de strncpy
-#include <stdexcept> // Para manejo de excepciones
+#ifndef AVL_H
+#define AVL_H
+
+#include "record.h"
+
 using namespace std;
 
-class AVL {
-public:
-    struct RecordAVL {
-        int id; // ID del Pokémon
-        char name[20]; // Nombre
-        char type1[10]; // Tipo 1
-        char type2[10]; // Tipo 2
-        int total; // Total de stats
-        int hp; // Puntos de vida
-        int attack; // Ataque
-        int defense; // Defensa
-        int spAtk; // Ataque especial
-        int spDef; // Defensa especial
-        int speed; // Velocidad
-        int generation; // Generación
-        bool legendary; // Si es legendario o no
-
-        RecordAVL() {}
-
-        RecordAVL(int _id, const std::string& _name, const std::string& _type1, const std::string& _type2,
-                  int _total, int _hp, int _attack, int _defense, int _spAtk, int _spDef, int _speed,
-                  int _generation, bool _legendary) {
-            id = _id;
-            strncpy(name, _name.c_str(), sizeof(name));
-            strncpy(type1, _type1.c_str(), sizeof(type1));
-            strncpy(type2, _type2.c_str(), sizeof(type2));
-            total = _total;
-            hp = _hp;
-            attack = _attack;
-            defense = _defense;
-            spAtk = _spAtk;
-            spDef = _spDef;
-            speed = _speed;
-            generation = _generation;
-            legendary = _legendary;
-        }
-    };
-
-    struct NodeBT {
-        RecordAVL data; // Datos del registro
-        long left; // Índice del hijo izquierdo
-        long right; // Índice del hijo derecho
-        long height; // Altura del nodo
-
-        NodeBT() : left(-1), right(-1), height(1) {} // Inicializa hijo izquierdo y derecho como -1 y altura como 1
-
-        NodeBT(RecordAVL record) : data(record), left(-1), right(-1), height(1) {}
-    };
-
+class AVLFile
+{
 private:
-    long root; // Raíz del árbol
-    string filename; // Nombre del archivo donde se almacenan los nodos
-
-    long sizeC() {
-        ifstream file(filename, ios::binary);
-        file.seekg(0, ios::end);
-        long nBytes = file.tellg();
-        file.close();
-        return nBytes;
-    }
-
-    int sizeNode() {
-        return sizeof(NodeBT); // Tamaño del nodo
-    }
-
+    string filename;
+    long pos_root;
 public:
-    AVL(string filename) : filename(filename), root(-1) {}
+    AVLFile(string _filename){
+        this->pos_root = 0;
+        this->filename = _filename + ".bin";
 
-    RecordAVL find(int id) {
-        return find(root, id);
-    }
+        ifstream file(filename, ios::app | ios::binary);
 
-    void insert(RecordAVL record) {
-        insert(root, record, true);
-    }
-
-private:
-    RecordAVL find(long nodepos, int id) {
-        ifstream file(filename, ios::binary);
-        if (nodepos == -1) throw std::out_of_range("No se encontró el Pokémon con ID: " + to_string(id));
-
-        NodeBT temp;
-        file.seekg(nodepos * sizeof(NodeBT));
-        file.read((char*)&temp, sizeof(NodeBT));
-        file.close();
-
-        if (id < temp.data.id) {
-            return find(temp.left, id);
-        } else if (id > temp.data.id) {
-            return find(temp.right, id);
-        } else {
-            return temp.data; // Retorna el registro encontrado
-        }
-    }
-
-    void insert(long node, RecordAVL value, bool sit) {
-        fstream file(filename, ios::binary | ios::in | ios::out | ios::ate);
-        if (node == -1) {
-            NodeBT temp(value);
-            NodeBT aux = getNode(node).first;
-            (sit) ? aux.left = sizeC() / sizeof(NodeBT) : aux.right = sizeC() / sizeof(NodeBT);
-            file.seekp(0, ios::end);
-            file.write((char*)&temp, sizeof(NodeBT));
-            file.seekp(node * sizeof(NodeBT));
-            file.write((char*)&aux, sizeof(NodeBT));
+        if(!file.good()){
             file.close();
+            ofstream f(filename, ios::app | ios::binary);
+            f.close();
+        }
+
+    }
+
+    template<class TK>
+    Record find(TK key){
+        ifstream file(filename, ios::binary);
+        Record record = find(pos_root, key, file);
+        file.close();
+        return record;
+    }
+
+    template<class TK>
+    vector<Record> search(TK key){
+        ifstream file(filename, ios::binary);
+        vector<Record> records = search(pos_root, key, file);
+        file.close();
+        return records;
+    }
+
+    void add(Record record){
+        fstream f(this->filename, ios::in | ios::out | ios::binary);
+        insert(pos_root, record, f);
+        f.close();
+    }
+
+    template <class T>
+    void remove(T key){
+        fstream f(this->filename, ios::in | ios::out | ios::binary);
+        remove(pos_root, key, f);
+        f.close();
+    }
+
+    vector<Record> inorder(){
+        return inorder(pos_root);
+    }
+
+    template<class TK>
+    vector<Record> rangeSearch(TK begin, TK end){
+        vector<Record> results = RangeSearch(pos_root, begin, end);
+        return results;
+    }
+
+private:
+
+    template<class TK>
+    vector<Record> RangeSearch(long pos_node, const TK& begin, const TK& end) {
+        vector<Record> result;
+
+        if (pos_node != -1) {
+            ifstream file(filename, ios::binary);
+            Record record;
+            file.seekg(pos_node, ios::beg);
+            file.read((char*)&record, sizeof(Record));
+
+            if (record.getKey() >= begin) {
+                vector<Record> leftSubtree = RangeSearch(record.left, begin, end);
+                result.insert(result.end(), leftSubtree.begin(), leftSubtree.end());
+
+                if (record.getKey() <= end and record.getKey() != -1) {
+                    result.push_back(record);
+                }
+
+                if (record.getKey() < end) {
+                    vector<Record> rightSubtree = RangeSearch(record.right, begin, end);
+                    result.insert(result.end(), rightSubtree.begin(), rightSubtree.end());
+                }
+            } else {
+                // Si el registro actual est� antes del rango, solo exploramos el sub�rbol derecho.
+                vector<Record> rightSubtree = RangeSearch(record.right, begin, end);
+                result.insert(result.end(), rightSubtree.begin(), rightSubtree.end());
+            }
+
+            file.close();
+        }
+
+        return result;
+    }
+
+
+    vector<Record> inorder(long pos_node){
+        vector<Record> result;
+
+        if (pos_node != -1) {
+            ifstream file(filename, ios::binary);
+            Record record;
+            file.seekg(pos_node, ios::beg);
+            file.read((char*)&record, sizeof(Record));
+
+            vector<Record> leftSubtree = inorder(record.left);
+            result.insert(result.end(), leftSubtree.begin(), leftSubtree.end());
+
+            if(record.id != -1) result.push_back(record);
+
+            vector<Record> rightSubtree = inorder(record.right);
+            result.insert(result.end(), rightSubtree.begin(), rightSubtree.end());
+
+            file.close();
+        }
+
+        return result;
+    }
+
+
+    template<class TK>
+    vector<Record> search(long pos_node, TK key, ifstream& file){
+        vector<Record> found;
+
+        Record record;
+        file.seekg(pos_node, ios::beg);
+        file.read((char*)&record, sizeof(Record));
+
+        if (record.getKey() == key) {
+            found.push_back(record);
+        }
+
+        if (key > record.getKey() && record.right != -1) {
+            vector<Record> rightResults = search(record.right, key, file);
+            found.insert(found.end(), rightResults.begin(), rightResults.end());
+        } else if (key < record.getKey() && record.left != -1) {
+            vector<Record> leftResults = search(record.left, key, file);
+            found.insert(found.end(), leftResults.begin(), leftResults.end());
+        }
+
+        return found;
+    }
+
+
+
+    void insert(long pos_node, Record record, fstream& file){
+        file.seekg(0, ios::end);
+        if(file.tellg() == 0){
+            file.write((char*)&record, sizeof(Record));
             return;
         }
 
-        NodeBT temp;
-        file.seekg(node * sizeof(NodeBT));
-        file.read((char*)&temp, sizeof(NodeBT));
+        Record curr_record;
+        file.seekg(pos_node, ios::beg);
+        file.read((char*)&curr_record, sizeof(Record));
 
-        if (temp.data.id > value.id) {
-            insert(temp.left, value, true);
-        } else if (value.id < temp.data.id) {
-            insert(temp.right, value, false);
-        }
-
-        updateHeight(temp, node);
-        balance(node);
-        file.close();
-    }
-
-    void updateHeight(NodeBT& node, long pos) {
-        int leftHeight = height(node.left);
-        int rightHeight = height(node.right);
-        node.height = (leftHeight > rightHeight ? leftHeight : rightHeight) + 1;
-
-        fstream file(filename, ios::binary | ios::in | ios::out | ios::ate);
-        file.seekp(pos * sizeof(NodeBT));
-        file.write((char*)&node, sizeof(NodeBT));
-        file.close();
-    }
-
-    int height(long node) {
-        return node == -1 ? 0 : getNode(node).first.height;
-    }
-
-    void balance(long node) {
-        pair<NodeBT, long> temp = getNode(node);
-        int balanceFactor = balancingFactor(temp.first);
-
-        if (balanceFactor > 1) {
-            pair<NodeBT, long> temp2 = getNode(temp.first.left);
-            if (balancingFactor(temp2.first) < 0) {
-                left_rota(temp2.first, temp2.second);
+        if(record.getKey() < curr_record.getKey()){
+            if(curr_record.left == -1){
+                file.seekp(0, ios::end);
+                curr_record.left = file.tellg();
+                file.write((char*)&record, sizeof(Record));
+                file.seekg(pos_node, ios::beg);
+                file.write((char*)&curr_record, sizeof(Record));
             }
-            right_rota(temp.first, temp.second);
-        } else if (balanceFactor < -1) {
-            pair<NodeBT, long> temp2 = getNode(temp.first.right);
-            if (balancingFactor(temp2.first) > 0) {
-                right_rota(temp2.first, temp2.second);
+            else
+                insert(curr_record.left, record, file);
+        }else if(record.getKey() > curr_record.getKey()){
+            if(curr_record.right == -1){
+                file.seekp(0, ios::end);
+                curr_record.right = file.tellg();
+                file.write((char*)&record, sizeof(Record));
+                file.seekg(pos_node, ios::beg);
+                file.write((char*)&curr_record, sizeof(Record));
             }
-            left_rota(temp.first, temp.second);
+            else
+                insert(curr_record.right, record, file);
         }
+
+        updateHeight(pos_node, file);
+        balance(pos_node, file);
+
     }
 
-    pair<NodeBT, long> getNode(long pos) {
-        NodeBT temp;
-        ifstream file(filename, ios::binary);
-        file.seekg(pos * sizeof(NodeBT));
-        file.read((char*)&temp, sizeof(NodeBT));
-        file.close();
-        return {temp, pos};
-    }
+    template <class T>
+    void remove(long pos_node, T key, fstream& file){
+        if(pos_node == -1)
+            return;
+        Record curr_record;
+        file.seekg(pos_node, ios::beg);
+        file.read((char*)&curr_record, sizeof(Record));
 
-    int balancingFactor(NodeBT node) {
-        return height(node.left) - height(node.right);
-    }
+        if(key < curr_record.id)
+            remove(curr_record.left, key, file);
+        else if(key > curr_record.id)
+            remove(curr_record.right, key, file);
+        else{
+            if(curr_record.left == -1 && curr_record.right == -1){
+                curr_record.id = -1;
+                file.seekp(pos_node, ios::beg);
+                file.write((char*)&curr_record, sizeof(Record));
+            }
+            else if(curr_record.left == -1){
+                Record right_record;
+                file.seekg(curr_record.right, ios::beg);
+                file.read((char*)&right_record, sizeof(Record));
+                curr_record.id = right_record.id;
+                curr_record.right = right_record.right;
+                curr_record.left = right_record.left;
+                file.seekp(pos_node, ios::beg);
+                file.write((char*)&curr_record, sizeof(Record));
+            }
+            else if(curr_record.right == -1){
+                Record left_record;
+                file.seekg(curr_record.left, ios::beg);
+                file.read((char*)&left_record, sizeof(Record));
+                curr_record.id = left_record.id;
+                curr_record.right = left_record.right;
+                curr_record.left = left_record.left;
+                file.seekp(pos_node, ios::beg);
+                file.write((char*)&curr_record, sizeof(Record));
+            }
+            else{
+                Record left_record;
+                file.seekg(curr_record.left, ios::beg);
+                file.read((char*)&left_record, sizeof(Record));
+                curr_record.id = left_record.id;
+                curr_record.right = left_record.right;
+                curr_record.left = left_record.left;
+                file.seekp(pos_node, ios::beg);
+                file.write((char*)&curr_record, sizeof(Record));
+                remove(curr_record.left, left_record.id, file);
 
-    void left_rota(NodeBT& node, long pos) {
-        pair<NodeBT, long> temp = getNode(node.right);
-        node.right = temp.first.left;
-        temp.first.left = pos;
-
-        updateHeight(node, pos);
-        updateHeight(temp.first, temp.second);
-
-        fstream file(filename, ios::binary | ios::in | ios::out | ios::ate);
-        file.seekp(pos * sizeof(NodeBT));
-        file.write((char*)&node, sizeof(NodeBT));
-        file.seekp(temp.second * sizeof(NodeBT));
-        file.write((char*)&temp.first, sizeof(NodeBT));
-        file.close();
-    }
-
-    void right_rota(NodeBT& node, long pos) {
-        pair<NodeBT, long> temp = getNode(node.left);
-        node.left = temp.first.right;
-        temp.first.right = pos;
-
-        updateHeight(node, pos);
-        updateHeight(temp.first, temp.second);
-
-        fstream file(filename, ios::binary | ios::in | ios::out | ios::ate);
-        file.seekp(pos * sizeof(NodeBT));
-        file.write((char*)&node, sizeof(NodeBT));
-        file.seekp(temp.second * sizeof(NodeBT));
-        file.write((char*)&temp.first, sizeof(NodeBT));
-        file.close();
-    }
-
-public:
-    void display() {
-        display(root);
-    }
-
-private:
-    void display(long node) {
-        if (node != -1) {
-            pair<NodeBT, long> currentNode = getNode(node);
-            display(currentNode.first.left);
-            cout << "ID: " << currentNode.first.data.id << ", Name: " << currentNode.first.data.name << endl;
-            display(currentNode.first.right);
+            }
         }
+        updateHeight(pos_node, file);
+        balance(pos_node, file);
+
     }
+
+    /// AVL
+    int height(long pos_node, fstream& file){
+        if(pos_node == -1)
+            return -1;
+        Record record;
+        file.seekg(pos_node, ios::beg);
+        file.read((char*)&record, sizeof(Record));
+        return record.height;
+    }
+
+    void updateHeight(long pos_node, fstream& file){
+        if (pos_node == -1)
+            return;
+
+        Record record;
+        file.seekg(pos_node, ios::beg);
+        file.read((char*)&record, sizeof(Record));
+
+        int left_height = height(record.left, file);
+        int right_height = height(record.right, file);
+
+        record.height = max(left_height, right_height) + 1;
+
+        file.seekp(pos_node, ios::beg);
+        file.write((char*)&record, sizeof(Record));
+    }
+
+    int balancingFactor(long pos_node, fstream& file){
+        if(pos_node == -1)
+            return 0;
+        Record record;
+        file.seekg(pos_node, ios::beg);
+        file.read((char*)&record, sizeof(Record));
+        return height(record.left, file) - height(record.right, file);
+    }
+
+    void balance(long pos_node, fstream& file){
+        if(pos_node == -1)
+            return;
+
+        Record record;
+        file.seekg(pos_node, ios::beg);
+        file.read((char*)&record, sizeof(Record));
+
+        if(balancingFactor(pos_node, file) == 2){
+            if(balancingFactor(record.left, file) < 0){
+                left_rota(record.left, file);
+            }
+            right_rota(pos_node, file);
+        }
+        else if(balancingFactor(pos_node, file) == -2){
+            if(balancingFactor(record.right, file) > 0){
+                right_rota(record.right, file);
+            }
+            left_rota(pos_node, file);
+        }
+        updateHeight(pos_node, file);
+    }
+
+    void left_rota(long pos_node, fstream& file){
+        Record record;
+        file.seekg(pos_node, ios::beg);
+        file.read((char*)&record, sizeof(Record));
+
+        Record temp;
+        long pos_temp = record.right;
+        file.seekg(pos_temp, ios::beg);
+        file.read((char*)&temp, sizeof(Record));
+
+        record.right = temp.left;
+        temp.left = pos_temp;
+
+        file.seekg(pos_node, ios::beg);
+        file.write((char*)&temp, sizeof(Record));
+
+        file.seekg(pos_temp, ios::beg);
+        file.write((char*)&record, sizeof(Record));
+
+        updateHeight(pos_node, file);
+        updateHeight(pos_temp, file);
+    }
+
+    void right_rota(long pos_node, fstream& file){
+        Record record;
+        file.seekg(pos_node, ios::beg);
+        file.read((char*)&record, sizeof(Record));
+
+        Record temp;
+        long pos_temp = record.left;
+        file.seekg(pos_temp, ios::beg);
+        file.read((char*)&temp, sizeof(Record));
+
+        record.left = temp.right;
+        temp.right = pos_temp;
+
+        file.seekg(pos_node, ios::beg);
+        file.write((char*)&temp, sizeof(Record));
+
+        file.seekg(pos_temp, ios::beg);
+        file.write((char*)&record, sizeof(Record));
+
+        updateHeight(pos_node, file);
+        updateHeight(pos_temp, file);
+    }
+
 };
 
-#endif // AVLARCHIVOS_FINAL_H
+
+#endif // AVL_H
