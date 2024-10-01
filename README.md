@@ -52,3 +52,16 @@ Para mantener la propiedad de balance del árbol AVL, se implementan métodos pa
 El método ***RangeSearch(long pos_node, const TK& begin, const TK& end)*** realiza una búsqueda en un rango de claves especificadas, devolviendo todos los registros que se encuentren entre ***begin*** y ***end***. La búsqueda es eficiente, ya que solo se exploran los subárboles necesarios, aprovechando la estructura de árbol binario de búsqueda.
 
 
+## 3.SEQUENTIAL FILE
+
+add(Record record): Este método se encarga de agregar un nuevo registro al archivo de datos, siguiendo una lógica específica. Según las condiciones, los registros pueden insertarse en el archivo auxiliar o en el archivo principal de datos.
+
+remove_(const string& key):
+Para eliminar un registro, primero se debe realizar un proceso de reconstrucción (rebuild), donde los registros de data.bin y aux.bin se reorganizan y transfieren de forma ordenada a un nuevo archivo data.bin. Este proceso facilita la búsqueda binaria para identificar el registro que se desea eliminar, y asegura que no se produzcan errores o situaciones inesperadas en futuras búsquedas de registros similares.
+
+search(const string& key):
+La búsqueda de un registro específico se realiza mediante búsqueda binaria en el archivo principal data.bin, ya que los elementos están ordenados. Una vez encontrado, se procede a agregarlo a un vector y se buscan otros registros con la misma clave en las posiciones adyacentes.
+
+rangeSearch(const string& begin, const string& end):
+Este método realiza una búsqueda de rango entre dos claves, begin y end, en el archivo de datos. El proceso incluye realizar un rebuild para ordenar los registros, seguido de una búsqueda binaria para encontrar las posiciones de los límites. Se recorren los registros entre los límites para devolver aquellos que se encuentren en el rango.
+
