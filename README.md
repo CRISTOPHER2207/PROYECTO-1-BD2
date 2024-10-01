@@ -1,14 +1,10 @@
-## 1. Introducción
-En el contexto de estructuras de datos avanzadas, los árboles AVL (del nombre de sus creadores Adelson-Velsky y Landis) son árboles binarios de búsqueda auto-balanceados. Esta propiedad garantiza que el árbol mantenga una estructura balanceada, donde la diferencia de alturas entre los subárboles izquierdo y derecho de cualquier nodo no exceda 1. Esto mejora la eficiencia de las operaciones de búsqueda, inserción y eliminación a 
-O(logn), siendo particularmente útil en aplicaciones donde la eficiencia y el acceso rápido a los datos son críticos.
-Este informe detalla la implementación de un árbol AVL orientado al manejo de registros en un archivo binario. Se describen las principales técnicas y estructuras utilizadas en el código, así como el propósito de cada una dentro de la lógica de balanceo y gestión de los registros.
+## 1. IntroducciónEn este proyecto, implementaremos y gestionaremos técnicas de organización de archivos en memoria secundaria, junto con un parser de código SQL, para ejecutar y procesar sentencias relacionadas con la manipulación de datos. Esto permitirá realizar operaciones como inserción, búsqueda y eliminación de registros, facilitando el manejo eficiente de grandes volúmenes de información.
 
 ## 2. Objetivo del Proyecto
 
-El proyecto tiene como objetivo implementar un árbol AVL en C++ que gestione un archivo binario donde se almacenan registros de datos. El programa permite insertar, buscar, eliminar y recuperar registros en orden, utilizando la estructura del árbol AVL para garantizar que estas operaciones se realicen de manera eficiente.
-El archivo binario actúa como un almacenamiento persistente, lo que permite que los registros persistan entre diferentes ejecuciones del programa. El balanceo del árbol AVL asegura que las operaciones sobre los datos sean rápidas, independientemente del número de registros.
+La organización física de los archivos en memoria secundaria es fundamental para el desarrollo y funcionamiento de los sistemas de gestión de bases de datos (DBMS). En un mundo donde el manejo eficiente de la información es crucial, disponer de una estructura adecuada para los archivos almacenados en memoria secundaria asegura un acceso rápido, confiable y eficiente a los datos. En este proyecto, nos enfocaremos en aplicar diversas técnicas de organización de archivos, tales como la organización secuencial, AVL y hashing extensible, para optimizar la gestión de registros en memoria secundaria.
 
-## 3.Descripción General del Código
+## 3.AVL FILE
 
 El código está compuesto principalmente por una clase llamada AVLFile, que encapsula las operaciones del árbol AVL sobre un archivo binario. A continuación, se desglosan los elementos clave del código:
 
@@ -53,3 +49,5 @@ Para mantener la propiedad de balance del árbol AVL, se implementan métodos pa
 
 #### ***3.3.4. Búsqueda en Rango***
 El método ***RangeSearch(long pos_node, const TK& begin, const TK& end)*** realiza una búsqueda en un rango de claves especificadas, devolviendo todos los registros que se encuentren entre ***begin*** y ***end***. La búsqueda es eficiente, ya que solo se exploran los subárboles necesarios, aprovechando la estructura de árbol binario de búsqueda.
+
+
