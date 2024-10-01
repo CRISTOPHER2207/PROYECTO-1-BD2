@@ -1,4 +1,5 @@
-## 1. IntroducciónEn este proyecto, implementaremos y gestionaremos técnicas de organización de archivos en memoria secundaria, junto con un parser de código SQL, para ejecutar y procesar sentencias relacionadas con la manipulación de datos. Esto permitirá realizar operaciones como inserción, búsqueda y eliminación de registros, facilitando el manejo eficiente de grandes volúmenes de información.
+## 1. Introducción
+En este proyecto, implementaremos y gestionaremos técnicas de organización de archivos en memoria secundaria, junto con un parser de código SQL, para ejecutar y procesar sentencias relacionadas con la manipulación de datos. Esto permitirá realizar operaciones como inserción, búsqueda y eliminación de registros, facilitando el manejo eficiente de grandes volúmenes de información.
 
 ## 2. Objetivo del Proyecto
 
