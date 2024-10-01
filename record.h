@@ -24,14 +24,13 @@ struct Record
     char name[30];        // Nombre del Pokémon
     char type1[15];       // Tipo 1 del Pokémon
     char type2[15];       // Tipo 2 del Pokémon (puede estar vacío)
-    float height;         // Altura del Pokémon
-    float weight;         // Peso del Pokémon
-    int base_exp;         // Experiencia base del Pokémon
+    float total;         // Estadisticas
+    int hp;         // Vida del Pokémon
     int attack;           // Valor de ataque
     int defense;          // Valor de defensa
 
     long left = -1, right = -1;
-    int height_node = 0;  // Altura del nodo (si estás usando AVL u otro árbol)
+    int height = 0;  // Altura del nodo (si estás usando AVL u otro árbol)
     pair<long, char> next = {-1, 'd'};
 
     // Función para obtener la clave en base a una columna dada
@@ -39,7 +38,7 @@ struct Record
         if (key == "id") return id;
         else if (key == "attack") return attack;
         else if (key == "defense") return defense;
-        else if (key == "base_exp") return base_exp;
+        else if (key == "hp") return hp;
         else return -1; // En caso de que no haya coincidencia
     }
 
@@ -49,9 +48,8 @@ struct Record
         file.write(name, sizeof(name));
         file.write(type1, sizeof(type1));
         file.write(type2, sizeof(type2));
-        file.write(reinterpret_cast<const char*>(&height), sizeof(float));
-        file.write(reinterpret_cast<const char*>(&weight), sizeof(float));
-        file.write(reinterpret_cast<const char*>(&base_exp), sizeof(int));
+        file.write(reinterpret_cast<const char*>(&total), sizeof(int));
+        file.write(reinterpret_cast<const char*>(&hp), sizeof(int));
         file.write(reinterpret_cast<const char*>(&attack), sizeof(int));
         file.write(reinterpret_cast<const char*>(&defense), sizeof(int));
     }
@@ -62,9 +60,8 @@ struct Record
         file.read(name, sizeof(name));
         file.read(type1, sizeof(type1));
         file.read(type2, sizeof(type2));
-        file.read(reinterpret_cast<char*>(&height), sizeof(float));
-        file.read(reinterpret_cast<char*>(&weight), sizeof(float));
-        file.read(reinterpret_cast<char*>(&base_exp), sizeof(int));
+        file.read(reinterpret_cast<char*>(&total), sizeof(int));
+        file.read(reinterpret_cast<char*>(&hp), sizeof(int));
         file.read(reinterpret_cast<char*>(&attack), sizeof(int));
         file.read(reinterpret_cast<char*>(&defense), sizeof(int));
     }

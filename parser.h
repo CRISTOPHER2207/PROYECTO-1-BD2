@@ -13,8 +13,7 @@
 #include <vector>
 #include <initializer_list>
 #include "Sequential.h"
-#include "../../../Downloads/AVL.h"
-//#include "ExtendibleHash.h"
+#include "AVL.h"
 
 
 using namespace std;
@@ -36,12 +35,12 @@ void savekey(string key, string tabla){
 }
 
 
-string findTkey(const string& tableName) {
+string findKeyForTable(const string& tableName) {
     std::ifstream archivo("tablekeys.txt");
 
     if (!archivo.is_open()) {
         std::cerr << "No se pudo abrir el archivo." << std::endl;
-        return ""; // Devuelve una cadena vacï¿½a si no se pudo abrir el archivo.
+        return ""; // Devuelve una cadena vacía si no se pudo abrir el archivo.
     }
 
     std::string linea;
@@ -60,12 +59,12 @@ string findTkey(const string& tableName) {
     }
 
     archivo.close();
-    std::cerr << "No se encontrï¿½ la tabla en el archivo." << std::endl;
+    std::cerr << "No se encontró la tabla en el archivo." << std::endl;
         return "";
 }
 
 
-// Lï¿½gica para leer el archivo CSV y cargar los datos en una estructura
+// Lógica para leer el archivo CSV y cargar los datos en una estructura
 template <class STR>
 void readCSVFile(const string& filename, STR& structure) {
     ifstream file(filename);
@@ -76,31 +75,31 @@ void readCSVFile(const string& filename, STR& structure) {
     }
 
     string line;
-    getline(file, line); // Leer la primera lï¿½nea (encabezados) y descartarla
+    getline(file, line); // Encabezados
 
     while (getline(file, line)) {
         istringstream ss(line);
-        string id_str,id2_str, name_str, type1_str, type2_str, height_str, weight_str, base_exp_str, attack_str, defense_str;
+        string id_str, name_str, type1_str, type2_str, total_str,hp_str, attack_str, defense_str;
 
-        if (getline(ss, id_str, ',') && getline(ss, name_str, ',') && getline(ss, id2_str, ',') &&
+        if (getline(ss, id_str, ',') && getline(ss, name_str, ',')  &&
             getline(ss, type1_str, ',') && getline(ss, type2_str, ',') &&
-            getline(ss, height_str, ',') && getline(ss, weight_str, ',') &&
-            getline(ss, base_exp_str, ',') && getline(ss, attack_str, ',') &&
-            getline(ss, defense_str, ',')) {
+            getline(ss, total_str, ',') &&
+            getline(ss, hp_str, ',') && getline(ss, attack_str, ',') &&
+            getline(ss, defense_str, ','))
+            {
 
             Record record;
             record.id = stoi(id_str);
             strncpy(record.name, name_str.c_str(), sizeof(record.name));
             strncpy(record.type1, type1_str.c_str(), sizeof(record.type1));
             strncpy(record.type2, type2_str.c_str(), sizeof(record.type2));
-            record.height = stoi(height_str);
-            record.weight = stoi(weight_str);
-            record.base_exp = stoi(base_exp_str);
+            record.total = stof(total_str);
+            record.hp = stoi(hp_str);
             record.attack = stoi(attack_str);
             record.defense = stoi(defense_str);
             structure.add(record);
         } else {
-            cerr << "Error al analizar la lï¿½nea: " << line << endl;
+            cerr << "Error al analizar la línea: " << line << endl;
         }
     }
 
@@ -111,8 +110,7 @@ void readCSVFile(const string& filename, STR& structure) {
 
 class Token {
 public:
-    enum Type { ID, ERR, END, NUM, SELECT, FROM, WHERE, INSERT, DELETE, INTO, SET, VALUES, AND, OR, NOT, GT, LT, GE, LE, EQ, NEQ,
-    LPAREN, RPAREN, COMILLAS, USING, INDEX, BETWEEN, CAMPO, CREATE, TABLE, FILE, COMA, BOOL };
+    enum Type { ID, ERR, END, NUM, SELECT, FROM, WHERE, INSERT, DELETE, INTO, VALUES, GT, LT, GE, LE, EQ, NEQ, LPAREN, RPAREN, COMILLAS, USING, INDEX, BETWEEN, CAMPO, CREATE, TABLE, FILE, COMA, BOOL };
     static const char* token_names[34];
     Type type;
     string lexema;
@@ -121,8 +119,7 @@ public:
     Token(Type, const string source);
 };
 
-const char* Token::token_names[34] = { "ID", "ERR", "END", "NUM", "SELECT", "FROM", "WHERE", "INSERT", "DELETE", "INTO", "SET", "VALUES", "AND", "OR", "NOT", "GT", "LT", "GE",
-"LE", "EQ", "NEQ", "LPAREN", "RPAREN", "COMILLAS", "USING", "INDEX", "BETWEEN", "CAMPO", "CREATE", "TABLE", "FILE", "COMA", "BOOL" };
+const char* Token::token_names[34] = { "ID", "ERR", "END", "NUM", "SELECT", "FROM", "WHERE", "INSERT", "DELETE", "INTO", "VALUES", "GT", "LT", "GE", "LE", "EQ", "NEQ", "LPAREN", "RPAREN", "COMILLAS", "USING", "INDEX", "BETWEEN", "CAMPO", "CREATE", "TABLE", "FILE", "COMA", "BOOL" };
 
 Token::Token(Type type):type(type){
     lexema = "";
@@ -168,11 +165,7 @@ Scanner::Scanner(const char* s):input(s),first(0),current(0) {
     keywords["INSERT"] = Token::INSERT;
     keywords["DELETE"] = Token::DELETE;
     keywords["INTO"] = Token::INTO;
-    keywords["SET"] = Token::SET;
     keywords["VALUES"] = Token::VALUES;
-    keywords["AND"] = Token::AND;
-    keywords["OR"] = Token::OR;
-    keywords["NOT"] = Token::NOT;
     keywords["USING"] = Token::USING;
     keywords["INDEX"] = Token::INDEX;
     keywords["BETWEEN"] = Token::BETWEEN;
@@ -224,17 +217,19 @@ string Scanner::getLexema() {
     }
 
     return res;
+
 }
 
 Token* Scanner::nextToken() {
-    Token* token;
     char c;
     c = nextChar();
 
-    while (c == ' ' || c == '\t' || c == '\n')  c = nextChar();
+    while (c == ' ' || c == '\t' || c == '\n')
+        c = nextChar();
 
     if(c == '#'){
-        while (c != '\n')   c = nextChar();
+        while (c != '\n')
+            c = nextChar();
         c = nextChar();
     }
 
@@ -246,38 +241,52 @@ Token* Scanner::nextToken() {
         return new Token(Token::COMA);
     if(c == '"'){
         c = nextChar();
-        while (c != '"') c = nextChar();
+        while (c != '"') {
+            c = nextChar();
+        }
         return new Token(Token::ID, getLexema());
     }
-    if(c == '(') return new Token(Token::LPAREN);
-    if(c == ')') return new Token(Token::RPAREN);
+    if(c == '(')
+        return new Token(Token::LPAREN);
+    if(c == ')')
+        return new Token(Token::RPAREN);
     if(c == '<'){
         c = nextChar();
-        if(c == '=') return new Token(Token::LE);
+        if(c == '=')
+            return new Token(Token::LE);
         return new Token(Token::LT);
     }
     if(c == '>'){
         c = nextChar();
-        if(c == '=') return new Token(Token::GE);
+        if(c == '=')
+            return new Token(Token::GE);
         return new Token(Token::GT);
     }
     if(c == '='){
         c = nextChar();
-        if(c == '>') return new Token(Token::GE);
-        if(c == '<') return new Token(Token::LE);
+        if(c == '>')
+            return new Token(Token::GE);
+        if(c == '<')
+            return new Token(Token::LE);
         return new Token(Token::EQ);
     }
     if (isalpha(c)) {
         c = nextChar();
-        while (isdigit(c) || isalpha(c)) c = nextChar();
+        while (isdigit(c) || isalpha(c)) {
+            c = nextChar();
+        }
         rollBack();
-        if(getLexema() == "true" or getLexema() == "false") return new Token(Token::BOOL, getLexema());
-        else if(keywords[getLexema()] == Token::ID) return new Token(Token::CAMPO, getLexema());
-        else return new Token(keywords[getLexema()]);
+        if(getLexema() == "true" or getLexema() == "false")
+            return new Token(Token::BOOL, getLexema());
+        else if(keywords[getLexema()] == Token::ID)
+            return new Token(Token::CAMPO, getLexema());
+        else
+            return new Token(keywords[getLexema()]);
 
     } else if (isdigit(c)) {
         c = nextChar();
-        while (isdigit(c)) c = nextChar();
+        while (isdigit(c))
+            c = nextChar();
         rollBack();
 
         return new Token(Token::NUM, getLexema());
@@ -381,22 +390,22 @@ private:
         expect(Token::CAMPO);
 
         tabla = previousToken->lexema;
-        KEY = findTkey(tabla);
+        KEY = findKeyForTable(tabla);
 
         if(currentToken->type == Token::USING){
             advance();
             expect(Token::CAMPO);
             if(currentToken->type == Token::END){
-                if(previousToken->lexema == "SEQUENTIAL" or previousToken->lexema == "sequential"){
+                if(previousToken->lexema == "SEQUENTIAL"){
                     Sequential f(tabla);
                     found = f.inorder();
-                }else if(previousToken->lexema == "AVL" or previousToken->lexema == "avl"){
+                }else if(previousToken->lexema == "AVL"){
                     AVLFile f(tabla);
                     found = f.inorder();
-                }//else if(previousToken->lexema == "HASH" or previousToken->lexema == "hash"){
-                  //  DynamicHash f(tabla + ".bin", tabla + "index.bin", D, FB);
-                  //  found = f.inorder();
-                //}
+                }else if(previousToken->lexema == "HASH"){
+                    //ExtendibleHash f(tabla + ".bin", tabla + "index.bin", D, FB);
+                    //found = f.inorder();
+                }
             }
             return found;
         }
@@ -484,12 +493,7 @@ private:
                 Sequential indice(tabla);
                 readCSVFile<Sequential>(filename, indice);
                 cout << "Tabla creada con nombre " << tabla << endl;
-            }//else if(index== "HASH" or index == "hash"){
-                //savekey(key, tabla);
-               // DynamicHash indice(tabla + ".bin", tabla + "index.bin", D, FB);
-              //  readCSVFile<DynamicHash>(filename, indice);
-             //   cout << "Tabla creada con nombre " << tabla << endl;
-            //}
+            }
             else{
                 cout << "Indice no existente";
             }
@@ -512,20 +516,17 @@ private:
         expect(Token::ID);
         strncpy(record.name, previousToken->lexema.c_str(), sizeof(record.name));
         expect(Token::COMA);
-        expect(Token::NUM);
-        record.height = stoi(previousToken->lexema);
-        expect(Token::COMA);
-        expect(Token::NUM);
-        record.weight = stoi(previousToken->lexema);
-        expect(Token::COMA);
-        expect(Token::NUM);
-        record.base_exp = stoi(previousToken->lexema);
-        expect(Token::COMA);
         expect(Token::ID);
         strncpy(record.type1, previousToken->lexema.c_str(), sizeof(record.type1));
         expect(Token::COMA);
         expect(Token::ID);
         strncpy(record.type2, previousToken->lexema.c_str(), sizeof(record.type2));
+        expect(Token::COMA);
+        expect(Token::NUM);
+        record.total = stoi(previousToken->lexema);
+        expect(Token::COMA);
+        expect(Token::NUM);
+        record.hp = stoi(previousToken->lexema);
         expect(Token::COMA);
         expect(Token::NUM);
         record.attack = stoi(previousToken->lexema);
@@ -535,18 +536,15 @@ private:
         expect(Token::RPAREN);
         expect(Token::USING);
         expect(Token::CAMPO);
-        KEY = findTkey(tabla);
+        KEY = findKeyForTable(tabla);
         if(currentToken->type == Token::END){
-            if(previousToken->lexema == "AVL" or previousToken->lexema == "avl"){
+            if(previousToken->lexema == "AVL"){
                 AVLFile f(tabla);
                 f.add(record);
-            }else if(previousToken->lexema == "SEQUENTIAL" or previousToken->lexema == "sequential"){
+            }else if(previousToken->lexema == "SEQUENTIAL"){
                 Sequential f(tabla);
                 f.add(record);
-            }//else if(previousToken->lexema == "HASH" or previousToken->lexema == "hash"){
-              //  DynamicHash f(tabla + ".bin", tabla + "index.bin", D, FB);
-              //  f.add(record);
-            //}
+            }
         }
     };
 
@@ -556,7 +554,7 @@ private:
         expect(Token::FROM);
         expect(Token::CAMPO);
         tabla = previousToken->lexema;
-        KEY = findTkey(tabla);
+        KEY = findKeyForTable(tabla);
         expect(Token::WHERE);
 
         expect(Token::CAMPO);
@@ -576,10 +574,7 @@ private:
                 }else if(previousToken->lexema == "AVL" or previousToken->lexema == "avl"){
                     AVLFile f(tabla);
                     f.remove(stoi(value));
-                }//else if(previousToken->lexema == "HASH" or previousToken->lexema == "hash"){
-                  //  DynamicHash f(tabla + ".bin", tabla + "index.bin", D, FB);
-                 //   f.remove(stoi(value));
-                //}
+                }
             }
         }
     };

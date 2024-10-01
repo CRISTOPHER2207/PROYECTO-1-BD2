@@ -1,33 +1,16 @@
-//
-// Created by crist on 1/10/2024.
-//
+#ifndef SEQUENTIAL_H_INCLUDED
+#define SEQUENTIAL_H_INCLUDED
+#include "record.h"
 
-#ifndef SUBIR_SEQUENTIAL_H
-#define SUBIR_SEQUENTIAL_H
-#ifndef SEQUENTIALFILE_H
-#define SEQUENTIALFILE_H
-
-#include <iostream>
-#include <fstream>
-#include <cstdio>
-#include <map>
-#include <vector>
-#include <unistd.h>
-#include <cstring>
-#include <cmath>
-#include "Record.h"
-
-using namespace std;
-
-class SequentialFile{
+class Sequential{
     string filename;
     string aux_file;
     pair<long, char> head;
     long n;
 public:
-    SequentialFile(string _filename){
-        this->filename = path + _filename + ".bin";
-        this->aux_file = path + _filename + "_aux.bin";
+    Sequential(string _filename){
+        this->filename =  _filename + ".bin";
+        this->aux_file = _filename + "_aux.bin";
 
         ifstream file(filename, ios::binary);
 
@@ -45,7 +28,7 @@ public:
         }
     };
 
-    ~SequentialFile(){}
+    ~Sequential(){}
 
     long filesize(fstream& file){
         long size;
@@ -376,13 +359,8 @@ private:
 
         string old_name = "rebuild.bin";
         string new_name = filename;
-
-        auto removing_aux = std::remove(aux_file.c_str());
-        auto removing_data = std::remove(filename.c_str());
-        auto renaming = std::rename(old_name.c_str(), new_name.c_str());
     }
 
 };
 
-#endif // SEQUENTIALFILE_H
-#endif //SUBIR_SEQUENTIAL_H
+#endif // SEQUENTIAL_H_INCLUDED
